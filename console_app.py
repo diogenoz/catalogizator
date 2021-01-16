@@ -24,11 +24,9 @@ if __name__ == "__main__":
     dbApp = db_app.DBApp(dir_path + "/db")
     coreApp = core_app.App(dbApp)
 
-    coreApp.add_tag_to_file('/home/diogenoz/PycharmProjects/catalogizator2020/[[DAP][Legal][Germany]]1.mp4', 1)
-    coreApp.delete_tag('/home/diogenoz/PycharmProjects/catalogizator2020/[[Best][DAP][Legal][Germany]]1.mp4', 1)
     arg_parser = create_parser()
     args = arg_parser.parse_args()
-    """
+
     if args.command == 'addTag' and args.filePath and args.category:
         coreApp.add_tag_to_file(args.filePath, args.category)
     elif args.command == 'deleteTag':
@@ -43,7 +41,6 @@ if __name__ == "__main__":
         coreApp.export_to_playlist(args.category, args.playlistPath)
     else:
         print("Command don't found. Read documentation first")
-    """
 
     '''
     print('add category with name BEST')
@@ -67,7 +64,9 @@ if __name__ == "__main__":
     print('add tag for file(1) and category(1)')
     dbApp.addTag(1, 2)
 
-
+    coreApp.add_tag_to_file('/home/diogenoz/PycharmProjects/catalogizator2020/[[DAP][Legal][Germany]]1.mp4', 1)
+    coreApp.delete_tag('/home/diogenoz/PycharmProjects/catalogizator2020/[[Best][DAP][Legal][Germany]]1.mp4', 1)
+    
 
     #coreApp.createPlaylist("1.xspf", ["1.avi", "1.avi", "1.avi"])
     coreApp.addTagToFile("1.avi", 2)
