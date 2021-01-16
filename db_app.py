@@ -3,18 +3,18 @@ import sqlite3
 
 class DBApp:
 
-    def __init__(self, dbName):
-        self.connection = sqlite3.connect(dbName)
+    def __init__(self, db_name):
+        self.connection = sqlite3.connect(db_name)
         print("connection test ok")
 
     def __del__(self):
         self.connection.commit()
         self.connection.close()
 
-    def getTag(self, file_id, category_id):
+    def get_tag(self, file_id, category_id):
         cursor = self.connection.cursor()
         link_id = None
-        query_params = {"file_id": file_id,  "category_id": category_id}
+        query_params = {"file_id": file_id, "category_id": category_id}
         query_string = """ SELECT l.link_id  
                             FROM `File_link_category` l 
                             WHERE l.file_id = :file_id 
@@ -33,10 +33,33 @@ class DBApp:
 
         return link_id
 
-    def addTag(self, fileId: int, categoryId: int):
+    def get_tags_by_file(self, file_id):
+        cursor = self.connection.cursor()
+        result = None
+        query_params = {"file_id": file_id}
+        query_string = """ SELECT l.category_id
+                                 ,c.name  
+                            FROM `File_link_category` l, `Category` c 
+                            WHERE l.file_id = :file_id
+                              AND c.is_enable = 1
+                              AND l.category_id = c.category_id
+                            ORDER BY c.category_id; """
+        try:
+            cursor.execute(query_string, query_params)
+            result = cursor.fetchall()
+        except sqlite3.DatabaseError as err:
+            print("Ошибка:", err)
+        else:
+            print("insert ok")
+        finally:
+            cursor.close()
+
+        return result
+
+    def add_tag(self, file_id: int, category_id: int):
         cursor = self.connection.cursor()
 
-        query_params = {"category_id": categoryId, "file_id": fileId}
+        query_params = {"category_id": category_id, "file_id": file_id}
         query_string = """\
         INSERT INTO `File_link_category`(`category_id`,`file_id`) VALUES (:category_id, :file_id);
         """
@@ -47,9 +70,10 @@ class DBApp:
         else:
             print("insert ok")
         finally:
+            self.connection.commit()
             cursor.close()
 
-    def deleteTag(self, file_id, category_id):
+    def delete_tag(self, file_id, category_id):
         cursor = self.connection.cursor()
 
         query_params = {"file_id": file_id, "category_id": category_id}
@@ -63,13 +87,13 @@ class DBApp:
         else:
             print("delete ok")
         finally:
+            self.connection.commit()
             cursor.close()
 
-
-    def getFilesWithTag(self, categoryId):
+    def get_files_with_tag(self, category_id):
         cursor = self.connection.cursor()
         paths = []
-        query_params = {"categoryId": categoryId}
+        query_params = {"categoryId": category_id}
         query_string = """ SELECT DISTINCT f.path  FROM `File_link_category` l JOIN 'File' f 
         ON f.file_id = l.file_id   WHERE l.category_id = :categoryId; """
         try:
@@ -77,7 +101,6 @@ class DBApp:
 
             for row in cursor:
                 paths.append(row[0])
-
 
         except sqlite3.DatabaseError as err:
             print("Ошибка:", err)
@@ -88,10 +111,9 @@ class DBApp:
 
         return paths
 
-    def addCategory(self, name, is_enable=1):
-        categoryId = None
+    def add_category(self, name, is_enable=1):
+        category_id = None
         cursor = self.connection.cursor()
-
 
         query_params = {"name": name, "is_enable": is_enable}
         query_string = """\
@@ -100,16 +122,17 @@ class DBApp:
         try:
             cursor.execute(query_string, query_params)
 
-            categoryId = cursor.lastrowid
+            category_id = cursor.lastrowid
         except sqlite3.DatabaseError as err:
             print("Ошибка:", err)
         else:
             print("insert ok")
         finally:
+            self.connection.commit()
             cursor.close()
-        return categoryId
+        return category_id
 
-    def disableCategory(self, category_id):
+    def disable_category(self, category_id):
         cursor = self.connection.cursor()
 
         query_params = {"category_id": category_id, "is_enable": 0}
@@ -123,9 +146,10 @@ class DBApp:
         else:
             print("insert ok")
         finally:
+            self.connection.commit()
             cursor.close()
 
-    def getCategories(self):
+    def get_categories(self):
         cursor = self.connection.cursor()
         categories = []
         query_string = """ SELECT c.name  FROM `Category` c"""
@@ -144,27 +168,28 @@ class DBApp:
 
         return categories
 
-    def addFile(self, name, path, size, hash):
-        fileId = None
+    def add_file(self, name, path, size, hash_sum):
+        file_id = None
         cursor = self.connection.cursor()
 
-        query_params = {"name": name, "path": path, "size": size, "hash": hash}
+        query_params = {"name": name, "path": path, "size": size, "hash": hash_sum}
         query_string = """\
                 INSERT INTO `File`(`name`,`path`,`size`,`hash`) VALUES (:name, :path, :size, :hash);
                 """
         try:
             cursor.execute(query_string, query_params)
 
-            fileId = int(cursor.lastrowid)
+            file_id = int(cursor.lastrowid)
         except sqlite3.DatabaseError as err:
             print("Ошибка:", err)
         else:
             print("insert ok")
         finally:
+            self.connection.commit()
             cursor.close()
-        return fileId
+        return file_id
 
-    def delFile(self, file_id):
+    def del_file(self, file_id):
         cursor = self.connection.cursor()
 
         query_params = {"file_id": file_id}
@@ -178,20 +203,21 @@ class DBApp:
         else:
             print("insert ok")
         finally:
+            self.connection.commit()
             cursor.close()
 
-    def findSameFile(self, size, hash):
+    def find_same_file(self, size, hash_sum):
         cursor = self.connection.cursor()
         file_id = None
 
-        query_params = {"size": size, "hash": hash}
+        query_params = {"size": size, "hash": hash_sum}
         query_string = """\
         SELECT file_id FROM `File` WHERE size = :size and hash = :hash;
         """
         try:
             cursor.execute(query_string, query_params)
             result = cursor.fetchone()
-            if result != None:
+            if result is not None:
                 file_id = int(result[0])
         except sqlite3.DatabaseError as err:
             print("Ошибка:", err)
@@ -201,18 +227,21 @@ class DBApp:
             cursor.close()
         return file_id
 
-    def findFileByPath(self, size, hash, path):
+    def find_file_by_path(self, size, hash_sum, path):
         cursor = self.connection.cursor()
         file_id = None
 
-        query_params = {"size": size, "hash": hash, "path": path}
+        query_params = {"size": size, "hash": hash_sum, "path": path}
         query_string = """\
-        SELECT file_id FROM `File` f WHERE f.size = :size and f.hash = :hash and f.path = :path;
+        SELECT file_id FROM `File` f
+        WHERE f.size = :size 
+          AND f.hash = :hash 
+          AND f.path = :path;
         """
         try:
             cursor.execute(query_string, query_params)
             result = cursor.fetchone()
-            if result != None:
+            if result is not None:
                 file_id = int(result[0])
         except sqlite3.DatabaseError as err:
             print("Ошибка:", err)
@@ -221,3 +250,48 @@ class DBApp:
         finally:
             cursor.close()
         return file_id
+
+    def get_file_by_id(self, file_id):
+        cursor = self.connection.cursor()
+        result = None
+
+        query_params = {"file_id": file_id}
+        query_string = """\
+                SELECT f.file_id
+                      ,f.path
+                      ,f.name
+                      ,f.size
+                      ,f.hash
+                FROM `File` f
+                WHERE f.file_id = :file_id;
+                """
+        try:
+            cursor.execute(query_string, query_params)
+            result = cursor.fetchone()
+        except sqlite3.DatabaseError as err:
+            print("Ошибка:", err)
+        else:
+            print("find it")
+        finally:
+            cursor.close()
+        return result
+
+    def upd_file_path(self, file_id, path, name):
+        cursor = self.connection.cursor()
+
+        query_params = {"file_id": file_id, "path": path, "name": name}
+        query_string = """\
+                UPDATE `File`
+                SET path = :path
+                   ,name = :name
+                WHERE file_id = :file_id;
+                """
+        try:
+            cursor.execute(query_string, query_params)
+        except sqlite3.DatabaseError as err:
+            print("Ошибка:", err)
+        else:
+            print("upd_file_path it")
+        finally:
+            self.connection.commit()
+            cursor.close()

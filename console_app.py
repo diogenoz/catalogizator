@@ -1,42 +1,49 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import os
+import sys
+
 import core_app
 import db_app
 import argparse
 
 
-def createParser():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-f', '--filePath', nargs='?')
-    parser.add_argument('-p', '--playlistPath', nargs='?', default='example.xspf')
-    parser.add_argument('-cmd', '--command', nargs='?', default='addTag')
-    parser.add_argument('-n', '--name', nargs='?')
-    parser.add_argument('-c', '--category', nargs='?')
+def create_parser():
+    arg_parser = argparse.ArgumentParser()
+    arg_parser.add_argument('-f', '--filePath', nargs='?')
+    arg_parser.add_argument('-p', '--playlistPath', nargs='?', default='example.xspf')
+    arg_parser.add_argument('-cmd', '--command', nargs='?', default='addTag')
+    arg_parser.add_argument('-n', '--name', nargs='?')
+    arg_parser.add_argument('-c', '--category', nargs='?')
 
-    return parser
+    return arg_parser
 
 
 if __name__ == "__main__":
-    parser = createParser()
-    args = parser.parse_args()
-
-    dbApp = db_app.DBApp("/home/diogenoz/PycharmProjects/catalogizator2020/db")
+    dir_path = os.path.dirname(sys.argv[0])
+    dbApp = db_app.DBApp(dir_path + "/db")
     coreApp = core_app.App(dbApp)
 
+    coreApp.add_tag_to_file('/home/diogenoz/PycharmProjects/catalogizator2020/[[DAP][Legal][Germany]]1.mp4', 1)
+    coreApp.delete_tag('/home/diogenoz/PycharmProjects/catalogizator2020/[[Best][DAP][Legal][Germany]]1.mp4', 1)
+    arg_parser = create_parser()
+    args = arg_parser.parse_args()
+    """
     if args.command == 'addTag' and args.filePath and args.category:
-        coreApp.addTagToFile(args.filePath, args.category)
+        coreApp.add_tag_to_file(args.filePath, args.category)
     elif args.command == 'deleteTag':
-        coreApp.deleteTag(args.filePath, args.category)
+        coreApp.delete_tag(args.filePath, args.category)
     elif args.command == 'addCategory':
-        coreApp.addCategory(args.name)
+        coreApp.add_category(args.name)
     elif args.command == 'listCategories':
-        categories = coreApp.getCategories()
+        categories = coreApp.get_categories()
         if categories:
             print(categories)
     elif args.command == 'exportInVlc':
-        coreApp.exportToPlaylist(args.category, args.playlistPath)
+        coreApp.export_to_playlist(args.category, args.playlistPath)
     else:
-        print("Command don't fund. Read documentation first")
+        print("Command don't found. Read documentation first")
+    """
 
     '''
     print('add category with name BEST')
