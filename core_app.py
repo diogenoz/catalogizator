@@ -11,7 +11,8 @@ class App:
     def __init__(self, db: db_app.DBApp):
         self.db = db
 
-    def get_file_hash_sha512(self, file_path):
+    @staticmethod
+    def get_file_hash_sha512(file_path):
         buf_size = 65536
         sha512 = hashlib.sha512()
         with open(file_path, 'rb') as f:
@@ -58,10 +59,13 @@ class App:
 
         # 2. add new tags to file name
         categories = self.db.get_tags_by_file(file_id)
-        prefix = '['
-        for category in categories:
-            prefix += '[' + category[1] + ']'
-        prefix += ']'
+        if len(categories) > 0:
+            prefix = '['
+            for category in categories:
+                prefix += '[' + category[1] + ']'
+            prefix += ']'
+        else:
+            prefix = ''
         new_file_name = prefix + clear_file_name
 
         # 3. rename file
